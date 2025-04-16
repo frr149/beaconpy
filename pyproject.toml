@@ -23,5 +23,6 @@ requires-python = ">=3.7"
 "Bug Tracker" = "https://github.com/frr149/beaconpy/issues"
 
 [tool.pytest.ini_options]
-testpaths = ["test"]
+testpaths = ["beaconpy/tests"]
 python_files = "test_*.py"
+pythonpath = ["."]
