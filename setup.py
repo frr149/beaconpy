@@ -6,12 +6,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="beaconpy",
     version="0.1.0",
-    author="Fernando",
-    author_email="",
+    author="Fernando Rodriguez Romero",
+    author_email="frr@keepcoding.io",
     description="A Pythonic implementation of the observer pattern",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/beaconpy",
+    url="https://github.com/frr149/beaconpy",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
