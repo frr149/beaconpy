@@ -353,7 +353,7 @@ class TestErrorHandling:
         beacon.add_observer(error_observer)
         
         # Patch the logger and on_sync_errors method to track calls
-        with patch('beaconpy.logger', mock_logger):
+        with patch('beaconpy.beacon.logger', mock_logger):
             with patch.object(beacon, 'on_sync_errors') as mock_on_sync_errors:
                 # Trigger notification
                 with beacon.changing_state():
@@ -393,9 +393,12 @@ class TestErrorHandling:
                 beacon.add_observer(error_observer)
                 
                 # Trigger notification
-                with patch('beaconpy.logger', mock_logger):
+                with patch('beaconpy.beacon.logger', mock_logger):
                     with beacon.changing_state():
                         pass
+                    
+                    # Give event loop a chance to process callbacks
+                    await asyncio.sleep(0.1)
                     
                     # Verify that the normal observer was called
                     assert normal_observer_called is True
