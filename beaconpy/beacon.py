@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 # Error messages as constants
-class ErrorMessages:
+class _ErrorMessages:
     """Container for error messages used in the Beacon class."""
     LAMBDA_NOT_SUPPORTED = "Lambda functions are not supported as callbacks because they may be unexpectedly garbage collected"
 
 
-class BaseCallbackWrapper:
+class _BaseCallbackWrapper:
     """
     Base class for all callback wrapper types.
     
@@ -43,8 +43,8 @@ class BaseCallbackWrapper:
         Raises:
             TypeError: If callback is a lambda function.
         """
-        if BaseCallbackWrapper.is_lambda(callback):
-            raise TypeError(ErrorMessages.LAMBDA_NOT_SUPPORTED)
+        if _BaseCallbackWrapper.is_lambda(callback):
+            raise TypeError(_ErrorMessages.LAMBDA_NOT_SUPPORTED)
     
     def __eq__(self, other: Any) -> bool:
         """
@@ -122,7 +122,7 @@ class BaseCallbackWrapper:
                 not isinstance(func.__self__, type))
     
     @staticmethod
-    def create(callback: Callable[['Beacon'], None]) -> 'BaseCallbackWrapper':
+    def create(callback: Callable[['Beacon'], None]) -> '_BaseCallbackWrapper':
         """
         Factory method to create the appropriate wrapper type for a callback.
         
@@ -130,25 +130,25 @@ class BaseCallbackWrapper:
             callback: The callback to wrap.
             
         Returns:
-            BaseCallbackWrapper: A specific subclass instance that can handle the callback type.
+            _BaseCallbackWrapper: A specific subclass instance that can handle the callback type.
             
         Raises:
             TypeError: If callback is a lambda function.
         """
-        if BaseCallbackWrapper.is_lambda(callback):
-            raise TypeError(ErrorMessages.LAMBDA_NOT_SUPPORTED)
+        if _BaseCallbackWrapper.is_lambda(callback):
+            raise TypeError(_ErrorMessages.LAMBDA_NOT_SUPPORTED)
             
-        if BaseCallbackWrapper.is_class_method(callback):
-            return ClassMethodWrapper(callback)
+        if _BaseCallbackWrapper.is_class_method(callback):
+            return _ClassMethodWrapper(callback)
             
-        if BaseCallbackWrapper.is_instance_method(callback):
-            return InstanceMethodWrapper(callback)
+        if _BaseCallbackWrapper.is_instance_method(callback):
+            return _InstanceMethodWrapper(callback)
             
-        # All other callable types (functions and static methods) use the FunctionalCallbackWrapper
-        return FunctionalCallbackWrapper(callback)
+        # All other callable types (functions and static methods) use the _FunctionalCallbackWrapper
+        return _FunctionalCallbackWrapper(callback)
 
 
-class FunctionalCallbackWrapper(BaseCallbackWrapper):
+class _FunctionalCallbackWrapper(_BaseCallbackWrapper):
     """
     A wrapper for functional callbacks, including regular functions and static methods.
     
@@ -159,7 +159,7 @@ class FunctionalCallbackWrapper(BaseCallbackWrapper):
     
     def __init__(self, callback: Callable[['Beacon'], None]):
         """
-        Initialize a new FunctionalCallbackWrapper instance.
+        Initialize a new _FunctionalCallbackWrapper instance.
         
         Args:
             callback: The function or static method to wrap.
@@ -181,7 +181,7 @@ class FunctionalCallbackWrapper(BaseCallbackWrapper):
         Returns:
             bool: True if they represent the same callback, False otherwise.
         """
-        if isinstance(other, BaseCallbackWrapper):
+        if isinstance(other, _BaseCallbackWrapper):
             # Compare with another wrapper
             return self.callback_id == other.__hash__()
         else:
@@ -218,7 +218,7 @@ class FunctionalCallbackWrapper(BaseCallbackWrapper):
             callback(sender)
 
 
-class ClassMethodWrapper(BaseCallbackWrapper):
+class _ClassMethodWrapper(_BaseCallbackWrapper):
     """
     A wrapper for class method callbacks.
     
@@ -228,7 +228,7 @@ class ClassMethodWrapper(BaseCallbackWrapper):
     
     def __init__(self, callback: Callable[['Beacon'], None]):
         """
-        Initialize a new ClassMethodWrapper instance.
+        Initialize a new _ClassMethodWrapper instance.
         
         Args:
             callback: The class method to wrap.
@@ -253,10 +253,10 @@ class ClassMethodWrapper(BaseCallbackWrapper):
         Returns:
             bool: True if they represent the same class method, False otherwise.
         """
-        if isinstance(other, ClassMethodWrapper):
+        if isinstance(other, _ClassMethodWrapper):
             # Compare with another class method wrapper
             return self.callback_id == other.callback_id
-        elif isinstance(other, BaseCallbackWrapper):
+        elif isinstance(other, _BaseCallbackWrapper):
             # Different wrapper types can't be equal
             return False
         else:
@@ -296,7 +296,7 @@ class ClassMethodWrapper(BaseCallbackWrapper):
             func(cls, sender)
 
 
-class InstanceMethodWrapper(BaseCallbackWrapper):
+class _InstanceMethodWrapper(_BaseCallbackWrapper):
     """
     A wrapper for instance method callbacks.
     
@@ -306,7 +306,7 @@ class InstanceMethodWrapper(BaseCallbackWrapper):
     
     def __init__(self, callback: Callable[['Beacon'], None]):
         """
-        Initialize a new InstanceMethodWrapper instance.
+        Initialize a new _InstanceMethodWrapper instance.
         
         Args:
             callback: The instance method to wrap.
@@ -331,10 +331,10 @@ class InstanceMethodWrapper(BaseCallbackWrapper):
         Returns:
             bool: True if they represent the same instance method, False otherwise.
         """
-        if isinstance(other, InstanceMethodWrapper):
+        if isinstance(other, _InstanceMethodWrapper):
             # Compare with another instance method wrapper
             return self.callback_id == other.callback_id
-        elif isinstance(other, BaseCallbackWrapper):
+        elif isinstance(other, _BaseCallbackWrapper):
             # Different wrapper types can't be equal
             return False
         else:
@@ -461,7 +461,7 @@ class Beacon:
         """
         try:
             # Use the factory method to create the appropriate wrapper
-            wrapper = BaseCallbackWrapper.create(callback)
+            wrapper = _BaseCallbackWrapper.create(callback)
             
             if not self.is_being_observed(callback):
                 key = self._next_key
@@ -485,7 +485,7 @@ class Beacon:
                  the callback is a lambda function (which can't be registered).
         """
         # For lambda functions, just return False (they can't be registered anyway)
-        if BaseCallbackWrapper.is_lambda(callback):
+        if _BaseCallbackWrapper.is_lambda(callback):
             return False
             
         key = self._find_key(callback)
@@ -598,7 +598,7 @@ class Beacon:
             # No running loop, will use synchronous execution
             return None, True
 
-    def _notify_single_observer(self, callback_wrapper: BaseCallbackWrapper, 
+    def _notify_single_observer(self, callback_wrapper: _BaseCallbackWrapper, 
                                loop: Optional[asyncio.AbstractEventLoop] = None) -> Optional[Exception]:
         """
         Notify a single observer, either synchronously or asynchronously.
@@ -637,7 +637,7 @@ class Beacon:
             finally:
                 self._total_calls -= 1
 
-    def on_sync_errors(self, errors: List[Tuple[BaseCallbackWrapper, Exception]]) -> None:
+    def on_sync_errors(self, errors: List[Tuple[_BaseCallbackWrapper, Exception]]) -> None:
         """
         Handle exceptions that occurred during synchronous notifications.
         
@@ -672,10 +672,10 @@ class Beacon:
         
         for key, wrapper in self._observers.items():
             # Check if the callback is stale based on the wrapper type
-            if isinstance(wrapper, (ClassMethodWrapper, InstanceMethodWrapper)):
+            if isinstance(wrapper, (_ClassMethodWrapper, _InstanceMethodWrapper)):
                 is_stale = (wrapper.func_ref() is None or 
-                           (isinstance(wrapper, ClassMethodWrapper) and wrapper.class_ref() is None) or
-                           (isinstance(wrapper, InstanceMethodWrapper) and wrapper.instance_ref() is None))
+                           (isinstance(wrapper, _ClassMethodWrapper) and wrapper.class_ref() is None) or
+                           (isinstance(wrapper, _InstanceMethodWrapper) and wrapper.instance_ref() is None))
             else:
                 is_stale = wrapper.callback_ref() is None
             

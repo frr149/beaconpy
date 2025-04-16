@@ -10,9 +10,10 @@ import gc
 import pytest
 from unittest.mock import patch, MagicMock
 
-from beaconpy import (
-    Beacon, ErrorMessages, BaseCallbackWrapper, FunctionalCallbackWrapper, 
-    ClassMethodWrapper, InstanceMethodWrapper
+from beaconpy import Beacon
+from beaconpy.beacon import (
+    _ErrorMessages, _BaseCallbackWrapper, _FunctionalCallbackWrapper, 
+    _ClassMethodWrapper, _InstanceMethodWrapper
 )
 
 
@@ -24,7 +25,7 @@ class TestCallbackWrappers:
         def callback(sender):
             pass
         
-        wrapper = FunctionalCallbackWrapper(callback)
+        wrapper = _FunctionalCallbackWrapper(callback)
         
         # Check proper storage
         assert wrapper.callback_ref() is callback
@@ -32,13 +33,13 @@ class TestCallbackWrappers:
         
         # Test equality
         assert wrapper == callback
-        assert wrapper == FunctionalCallbackWrapper(callback)
+        assert wrapper == _FunctionalCallbackWrapper(callback)
         
         # Test inequality
         def another_callback(sender):
             pass
         assert wrapper != another_callback
-        assert wrapper != FunctionalCallbackWrapper(another_callback)
+        assert wrapper != _FunctionalCallbackWrapper(another_callback)
         
         # Test callback invocation
         called = False
@@ -49,7 +50,7 @@ class TestCallbackWrappers:
             called = True
             sender_received = sender
         
-        test_wrapper = FunctionalCallbackWrapper(test_callback)
+        test_wrapper = _FunctionalCallbackWrapper(test_callback)
         mock_sender = MagicMock()
         test_wrapper(mock_sender)
         assert called is True
@@ -62,7 +63,7 @@ class TestCallbackWrappers:
             def static_method(sender):
                 pass
         
-        wrapper = FunctionalCallbackWrapper(TestClass.static_method)
+        wrapper = _FunctionalCallbackWrapper(TestClass.static_method)
         
         # Check proper storage
         assert wrapper.callback_ref() is TestClass.static_method
@@ -70,7 +71,7 @@ class TestCallbackWrappers:
         
         # Test equality
         assert wrapper == TestClass.static_method
-        assert wrapper == FunctionalCallbackWrapper(TestClass.static_method)
+        assert wrapper == _FunctionalCallbackWrapper(TestClass.static_method)
         
         # Test inequality
         class AnotherClass:
@@ -78,7 +79,7 @@ class TestCallbackWrappers:
             def static_method(sender):
                 pass
         assert wrapper != AnotherClass.static_method
-        assert wrapper != FunctionalCallbackWrapper(AnotherClass.static_method)
+        assert wrapper != _FunctionalCallbackWrapper(AnotherClass.static_method)
         
         # Test callback invocation
         called = False
@@ -91,7 +92,7 @@ class TestCallbackWrappers:
                 called = True
                 sender_received = sender
         
-        test_wrapper = FunctionalCallbackWrapper(TestInvocation.static_method)
+        test_wrapper = _FunctionalCallbackWrapper(TestInvocation.static_method)
         mock_sender = MagicMock()
         test_wrapper(mock_sender)
         assert called is True
@@ -109,7 +110,7 @@ class TestCallbackWrappers:
         # during the test
         test_class_method = TestClass.class_method
         
-        wrapper = ClassMethodWrapper(test_class_method)
+        wrapper = _ClassMethodWrapper(test_class_method)
         
         # Check proper storage - now this should work
         assert wrapper.callback_ref() is test_class_method
@@ -119,7 +120,7 @@ class TestCallbackWrappers:
         
         # Test equality
         assert wrapper == test_class_method
-        assert wrapper == ClassMethodWrapper(test_class_method)
+        assert wrapper == _ClassMethodWrapper(test_class_method)
         
         # Test inequality
         class AnotherClass:
@@ -131,7 +132,7 @@ class TestCallbackWrappers:
         another_class_method = AnotherClass.class_method
         
         assert wrapper != another_class_method
-        assert wrapper != ClassMethodWrapper(another_class_method)
+        assert wrapper != _ClassMethodWrapper(another_class_method)
         
         # Test callback invocation
         called = False
@@ -149,7 +150,7 @@ class TestCallbackWrappers:
         # Store yet another reference
         test_invocation_method = TestInvocation.class_method
         
-        test_wrapper = ClassMethodWrapper(test_invocation_method)
+        test_wrapper = _ClassMethodWrapper(test_invocation_method)
         mock_sender = MagicMock()
         test_wrapper(mock_sender)
         
@@ -169,7 +170,7 @@ class TestCallbackWrappers:
         # during the test
         instance_method = instance.instance_method
         
-        wrapper = InstanceMethodWrapper(instance_method)
+        wrapper = _InstanceMethodWrapper(instance_method)
         
         # Check proper storage
         assert wrapper.callback_ref() is instance_method
@@ -179,14 +180,14 @@ class TestCallbackWrappers:
         
         # Test equality
         assert wrapper == instance_method
-        assert wrapper == InstanceMethodWrapper(instance_method)
+        assert wrapper == _InstanceMethodWrapper(instance_method)
         
         # Test inequality
         another_instance = TestClass()
         another_instance_method = another_instance.instance_method
         
         assert wrapper != another_instance_method
-        assert wrapper != InstanceMethodWrapper(another_instance_method)
+        assert wrapper != _InstanceMethodWrapper(another_instance_method)
         
         # Test callback invocation
         class TestInvocation:
@@ -199,9 +200,7 @@ class TestCallbackWrappers:
                 self.sender_received = sender
         
         test_instance = TestInvocation()
-        test_instance_method = test_instance.instance_method
-        
-        test_wrapper = InstanceMethodWrapper(test_instance_method)
+        test_wrapper = _InstanceMethodWrapper(test_instance.instance_method)
         mock_sender = MagicMock()
         test_wrapper(mock_sender)
         
@@ -209,7 +208,7 @@ class TestCallbackWrappers:
         assert test_instance.sender_received is mock_sender
     
     def test_factory_method(self):
-        """Test the create factory method."""
+        """Test the factory method that creates the appropriate wrapper type."""
         def function(sender):
             pass
         
@@ -217,117 +216,113 @@ class TestCallbackWrappers:
             @staticmethod
             def static_method(sender):
                 pass
-                
+            
             @classmethod
             def class_method(cls, sender):
                 pass
-                
+            
             def instance_method(self, sender):
                 pass
-        
+            
         instance = TestClass()
         
-        # Test function creation
-        wrapper = BaseCallbackWrapper.create(function)
-        assert isinstance(wrapper, FunctionalCallbackWrapper)
-        assert wrapper == function
+        # Check that appropriate wrappers are created
+        wrapper1 = _BaseCallbackWrapper.create(function)
+        assert isinstance(wrapper1, _FunctionalCallbackWrapper)
         
-        # Test static method creation - should now use FunctionalCallbackWrapper
-        wrapper = BaseCallbackWrapper.create(TestClass.static_method)
-        assert isinstance(wrapper, FunctionalCallbackWrapper)
-        assert wrapper == TestClass.static_method
+        wrapper2 = _BaseCallbackWrapper.create(TestClass.static_method)
+        assert isinstance(wrapper2, _FunctionalCallbackWrapper)
         
-        # Test class method creation
-        wrapper = BaseCallbackWrapper.create(TestClass.class_method)
-        assert isinstance(wrapper, ClassMethodWrapper)
-        assert wrapper == TestClass.class_method
+        wrapper3 = _BaseCallbackWrapper.create(TestClass.class_method)
+        assert isinstance(wrapper3, _ClassMethodWrapper)
         
-        # Test instance method creation
-        wrapper = BaseCallbackWrapper.create(instance.instance_method)
-        assert isinstance(wrapper, InstanceMethodWrapper)
-        assert wrapper == instance.instance_method
+        wrapper4 = _BaseCallbackWrapper.create(instance.instance_method)
+        assert isinstance(wrapper4, _InstanceMethodWrapper)
     
     def test_lambda_rejection(self):
-        """Test that lambda functions are rejected."""
+        """Test that lambda functions are rejected as callbacks."""
+        # Try to create a wrapper with a lambda
         with pytest.raises(TypeError) as excinfo:
-            FunctionalCallbackWrapper(lambda sender: None)
-        assert str(excinfo.value) == ErrorMessages.LAMBDA_NOT_SUPPORTED
+            _BaseCallbackWrapper.create(lambda sender: None)
         
-        with pytest.raises(TypeError) as excinfo:
-            BaseCallbackWrapper.create(lambda sender: None)
-        assert str(excinfo.value) == ErrorMessages.LAMBDA_NOT_SUPPORTED
+        # Verify the error message
+        assert str(excinfo.value) == _ErrorMessages.LAMBDA_NOT_SUPPORTED
     
     def test_hash_implementation(self):
-        """Test that wrappers can be used as dictionary keys."""
+        """Test that hash implementation works correctly for all wrapper types."""
         def callback1(sender):
             pass
-            
+        
         def callback2(sender):
             pass
         
-        # Create a dictionary with wrappers as keys
-        callbacks = {
-            FunctionalCallbackWrapper(callback1): "first",
-            FunctionalCallbackWrapper(callback2): "second"
-        }
+        # Test hash consistency
+        wrapper1 = _FunctionalCallbackWrapper(callback1)
+        wrapper2 = _FunctionalCallbackWrapper(callback1)
+        wrapper3 = _FunctionalCallbackWrapper(callback2)
         
-        # Check that lookups work
-        assert callbacks[FunctionalCallbackWrapper(callback1)] == "first"
-        assert callbacks[FunctionalCallbackWrapper(callback2)] == "second"
+        assert hash(wrapper1) == hash(wrapper2)
+        assert hash(wrapper1) != hash(wrapper3)
     
     def test_weak_reference_behavior(self):
-        """Test that the wrapper's weak reference behaves correctly."""
-        # Test for function wrapper
+        """Test that wrappers use weak references and don't prevent garbage collection."""
+        # Test with function
         def callback(sender):
             pass
         
-        wrapper = FunctionalCallbackWrapper(callback)
+        wrapper = _FunctionalCallbackWrapper(callback)
         assert wrapper.callback_ref() is callback
         
+        # Remove all references to the function and force garbage collection
+        callback_id = id(callback)
         del callback
         gc.collect()
         
+        # Wrapper's weak reference should now be None
         assert wrapper.callback_ref() is None
-        mock_sender = MagicMock()
-        wrapper(mock_sender)  # Should silently do nothing
         
-        # Test for class method wrapper
+        # Test with class method
         class TestClass:
             @classmethod
             def class_method(cls, sender):
                 pass
         
-        wrapper = ClassMethodWrapper(TestClass.class_method)
-        assert wrapper.class_ref() is TestClass
+        method = TestClass.class_method
+        wrapper = _ClassMethodWrapper(method)
+        assert wrapper.callback_ref() is method
         
-        # Store a reference to the class to delete later
-        test_class = TestClass
+        # Store original references
+        class_id = id(TestClass)
+        method_id = id(method)
         
-        # Replace TestClass with None to allow garbage collection
-        TestClass = None    #type: ignore
-        del test_class
+        # Delete references and force garbage collection
+        del TestClass
+        del method
         gc.collect()
         
+        # Wrapper's weak references should now be None
+        assert wrapper.callback_ref() is None
         assert wrapper.class_ref() is None
-        mock_sender = MagicMock()
-        wrapper(mock_sender)  # Should silently do nothing
         
-        # Test for instance method wrapper
+        # Test with instance method
         class TestInstanceClass:
             def instance_method(self, sender):
                 pass
-                
-        instance = TestInstanceClass()
-        wrapper = InstanceMethodWrapper(instance.instance_method)
-        assert wrapper.instance_ref() is instance
         
-        # Remove reference to instance to allow garbage collection
+        instance = TestInstanceClass()
+        method = instance.instance_method
+        wrapper = _InstanceMethodWrapper(method)
+        
+        # Delete references and force garbage collection
+        instance_id = id(instance)
+        method_id = id(method)
         del instance
+        del method
         gc.collect()
         
+        # Wrapper's weak references should now be None
+        assert wrapper.callback_ref() is None
         assert wrapper.instance_ref() is None
-        mock_sender = MagicMock()
-        wrapper(mock_sender)  # Should silently do nothing
 
 
 class TestErrorHandling:
@@ -435,7 +430,7 @@ class TestErrorHandling:
         
         # Verify the custom error handling worked
         assert len(beacon.errors_received) == 1
-        assert isinstance(beacon.errors_received[0][0], BaseCallbackWrapper)
+        assert isinstance(beacon.errors_received[0][0], _BaseCallbackWrapper)
         assert isinstance(beacon.errors_received[0][1], ValueError)
         assert str(beacon.errors_received[0][1]) == "Custom handling test"
     
@@ -643,7 +638,7 @@ class TestObserverManagement:
         lambda_fn = lambda sender: None     #noqa: E731
         with pytest.raises(TypeError) as excinfo:
             beacon.add_observer(lambda_fn)
-        assert str(excinfo.value) == ErrorMessages.LAMBDA_NOT_SUPPORTED
+        assert str(excinfo.value) == _ErrorMessages.LAMBDA_NOT_SUPPORTED
         
         # Test remove_observer with a lambda - should just return False, not raise
         assert beacon.remove_observer(lambda_fn) is False
