@@ -1,15 +1,16 @@
 # beaconpy
 
-A Pythonic implementation of the observer pattern, inspired by the Dart 'Antenna' mixin, with robust memory management and error handling.
+A Pythonic implementation of the observer pattern with robust memory management and error handling.
 
 ## Features
 
-- Weak references to callbacks (prevents memory leaks)
+- Weak references to callbacks so you don't have remove an observer (even though you can)
 - Support for various callback types (functions, static methods, class methods, instance methods)
-- Batch operations with a single notification
-- Protection against reentrant notifications
-- Control over whether notifications are sent
-- Asynchronous scheduling of callbacks
+- Context managers for to allow for different ways of making changes to the observed object:
+    - Changes wit a notification
+    - Batch operations with a single notification
+    - Changes with no notifications
+- Asynchronous scheduling of callbacks, with a synchronous fallback
 - Automatic cleanup of stale observers
 - Robust error handling that ensures all observers get notified even if some raise exceptions
 
@@ -53,6 +54,8 @@ counter.add_observer(on_counter_changed)
 counter.increment()  # Prints: "Counter changed! New value: 1"
 
 # Remove the observer when no longer needed
+# If you forget about this and the observer is garbage collected, 
+# beaconpy will stop sending notifications to it.
 counter.remove_observer(on_counter_changed)
 ```
 
@@ -116,7 +119,13 @@ beacon.add_observer(example.instance_method_callback)
 - Lambda functions are not supported as callbacks because they may be unexpectedly garbage collected
 - `functools.partial` objects, dynamically created functions, and factory-created functions should be avoided for similar reasons
 
-## Custom Error Handling
+## Error Handling
+
+* All callbacks are repsonsible for handling their exceptions.
+* In sync mode (no runloop) if a callback throws an exception, it won't prevent other callbacks from being notified. All exceptions will be captured by beaconpy and stored in a list of Tuples (callback, exception)
+  * Once all have been notified, this list will be passed to the `on_sync_errors` method. 
+* In async mode, the run loop will handle the uncaught exceptions
+
 
 You can override the `on_sync_errors` method to customize error handling:
 
