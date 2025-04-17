@@ -1,5 +1,6 @@
 # beaconpy
 
+[![PyPI version](https://badge.fury.io/py/beaconpy.svg)](https://badge.fury.io/py/beaconpy)
 [![Python Versions](https://img.shields.io/pypi/pyversions/beaconpy.svg)](https://pypi.org/project/beaconpy/)
 
 A Pythonic implementation of the observer pattern with robust memory management and error handling.
