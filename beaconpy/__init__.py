@@ -7,5 +7,5 @@ allowing objects to register callbacks that will be notified when the state chan
 
 from .beacon import Beacon
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = ["Beacon"] 

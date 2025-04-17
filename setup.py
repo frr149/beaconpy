@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="beaconpy",
-    version="0.1.0",
+    version="0.1.1",
     author="Fernando Rodriguez Romero",
     author_email="frr@keepcoding.io",
     description="A Pythonic implementation of the observer pattern",

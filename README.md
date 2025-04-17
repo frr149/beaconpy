@@ -142,6 +142,10 @@ class CustomBeacon(Beacon):
         # super().on_sync_errors(errors)
 ```
 
+## Thread Safety
+
+beaconpy is not threadsafe. Use one instance per thread.
+
 ## License
 
 MIT
